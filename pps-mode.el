@@ -5,7 +5,7 @@
 ;; Author: Pinnacle Point Development
 ;; Maintainer: Pinnacle Point Development
 ;; URL: https://github.com/Pinnacle-Point-Development/pps-mode
-;; Version: 0.1.0
+;; Version: 0.0.1
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: data, files, tools
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -41,6 +41,9 @@
 (require 'pp)
 (require 'seq)
 (require 'subr-x)
+
+(defvar Info-additional-directory-list)
+(declare-function info-initialize "info")
 
 (defgroup pps nil
   "Browse and edit Pinnacle Point Spreadsheet files."
@@ -1231,9 +1234,47 @@ KEEP-PAGE is reserved for callers that already rendered."
     (when (and (integerp row) (integerp column))
       (pps--select row column))))
 
+(defun pps--copy-cell (cell)
+  "Return an independent copy of internal CELL."
+  (cond
+   ((pps--formula-p cell)
+    (pps--formula-create :expr (copy-tree (pps--formula-expr cell))))
+   ((pps--date-p cell)
+    (pps--date-create :value (copy-sequence (pps--date-value cell))
+                      :datetime-p (pps--date-datetime-p cell)))
+   ((stringp cell) (copy-sequence cell))
+   (t cell)))
+
+(defun pps--copy-column (column)
+  "Return an independent copy of COLUMN."
+  (pps--column-create
+   :name (copy-sequence (pps--column-name column))
+   :type (pps--column-type column)
+   :width (pps--column-width column)
+   :format (and (pps--column-format column)
+                (copy-sequence (pps--column-format column)))))
+
+(defun pps--copy-sheet (sheet)
+  "Return an independent copy of SHEET."
+  (pps--sheet-create
+   :name (copy-sequence (pps--sheet-name sheet))
+   :columns (mapcar #'pps--copy-column (pps--sheet-columns sheet))
+   :rows (mapcar
+          (lambda (row)
+            (vconcat (mapcar #'pps--copy-cell (append row nil))))
+          (pps--sheet-rows sheet))))
+
+(defun pps--copy-workbook (workbook)
+  "Return an independent copy of WORKBOOK."
+  (pps--workbook-create
+   :version (pps--workbook-version workbook)
+   :meta (copy-tree (pps--workbook-meta workbook))
+   :sheets (mapcar #'pps--copy-sheet (pps--workbook-sheets workbook))
+   :active-sheet (pps--workbook-active-sheet workbook)))
+
 (defun pps--capture-state ()
   "Capture a deep copy of the current workbook and cursor."
-  (pps--state-create :workbook (copy-tree pps--workbook t)
+  (pps--state-create :workbook (pps--copy-workbook pps--workbook)
                      :row pps--row :column pps--column))
 
 (defun pps--record-change ()
@@ -1281,7 +1322,7 @@ KEEP-PAGE is reserved for callers that already rendered."
   (message "Redid spreadsheet change"))
 
 (defun pps--ensure-row (sheet row)
-  "Ensure SHEET contains ROW, appending blank rows if needed."
+  "Ensure that SHEET has ROW, appending blank rows if needed."
   (let ((column-count (length (pps--sheet-columns sheet))))
     (while (<= (length (pps--sheet-rows sheet)) row)
       (setf (pps--sheet-rows sheet)
@@ -1406,7 +1447,7 @@ VALUE uses the internal PPS representation."
     (cl-loop for row from (nth 0 bounds) to (nth 1 bounds) do
              (cl-loop for column from (nth 2 bounds) to (nth 3 bounds) do
                       (pps--set-cell-internal sheet row column
-                                              (copy-tree value t))))
+                                              (pps--copy-cell value))))
     (setq pps--mark-cell nil)
     (pps--finish-change)))
 
@@ -1558,7 +1599,8 @@ VALUE uses the internal PPS representation."
     (pps--finish-change)))
 
 (defun pps-set-column-width (width)
-  "Set the active column display WIDTH; zero selects automatic width."
+  "Set the active column display WIDTH.
+Use zero for automatic width."
   (interactive
    (list (read-number "Width (0 for automatic): "
                       (or (pps--column-width
@@ -1589,7 +1631,7 @@ VALUE uses the internal PPS representation."
         (t 2)))
 
 (defun pps--value-less-p (left right)
-  "Return non-nil when spreadsheet value LEFT sorts before RIGHT."
+  "Return non-nil when spreadsheet value LEFT precedes RIGHT."
   (let ((left-class (pps--sort-key-class left))
         (right-class (pps--sort-key-class right)))
     (if (/= left-class right-class)
@@ -1812,7 +1854,7 @@ AXIS, INDEX, COUNT, and DELETING describe that edit."
       (pps--formula-create
        :expr (pps--translate-formula-expression
               (pps--formula-expr cell) row-delta column-delta))
-    (copy-tree cell t)))
+    (pps--copy-cell cell)))
 
 (defun pps--delimited-field (text delimiter)
   "Encode TEXT as a field separated by DELIMITER."
@@ -1882,7 +1924,8 @@ AXIS, INDEX, COUNT, and DELETING describe that edit."
           (cl-loop for row from (nth 0 bounds) to (nth 1 bounds)
                    collect
                    (cl-loop for column from (nth 2 bounds) to (nth 3 bounds)
-                            collect (copy-tree (pps--cell-raw sheet row column) t))))
+                            collect (pps--copy-cell
+                                     (pps--cell-raw sheet row column)))))
          (text-matrix
           (mapcar (lambda (row) (mapcar #'pps--cell-source-string row)) matrix))
          (text (pps--matrix-to-delimited text-matrix "\t")))
@@ -2073,7 +2116,7 @@ Text from outside PPS is parsed as tab-delimited data."
   "Duplicate the active sheet and switch to the copy."
   (interactive)
   (let* ((original (pps--active-sheet))
-         (copy (copy-tree original t))
+         (copy (pps--copy-sheet original))
          (name (pps--unique-sheet-name
                 (concat (pps--sheet-name original) " Copy"))))
     (pps--record-change)
@@ -2301,8 +2344,23 @@ When CALCULATED is non-nil, export formula results."
   (interactive)
   (describe-mode))
 
+;;;###autoload
+(defun pps-info ()
+  "Open the PPS Mode Info manual."
+  (interactive)
+  (require 'info)
+  (let ((directory
+         (file-name-directory
+          (or (locate-library "pps-mode")
+              load-file-name
+              buffer-file-name
+              default-directory))))
+    (add-to-list 'Info-additional-directory-list directory)
+    (info-initialize)
+    (info "(pps-mode)")))
+
 (defun pps--format-decode (_begin end)
-  "No-op decoder that returns END for the buffer-local PPS format."
+  "Return END without decoding the buffer-local PPS format."
   end)
 
 (defun pps--format-encode (begin end original-buffer)
@@ -2412,6 +2470,7 @@ When CALCULATED is non-nil, export formula results."
   "C-c e" #'pps-export-delimited-file
   "C-c v" #'pps-validate
   "C-c =" #'pps-recalculate
+  "C-c C-i" #'pps-info
   "C-c ?" #'pps-describe-cell
   "C-c +" #'pps-selection-summary
   "?" #'pps-help
@@ -2463,6 +2522,7 @@ When CALCULATED is non-nil, export formula results."
     ["Import CSV/TSV" pps-import-delimited-file t]
     ["Export CSV/TSV" pps-export-delimited-file t]
     "--"
+    ["PPS Mode Manual" pps-info t]
     ["PPS Mode Help" pps-help t]))
 
 ;;;###autoload

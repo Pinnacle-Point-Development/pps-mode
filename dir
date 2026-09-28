@@ -1,0 +1,10 @@
+This is the file .../info/dir, which contains the topmost node of the
+Info hierarchy.
+
+
+File: dir, Node: Top
+
+* Menu:
+
+Emacs
+* PPS Mode: (pps-mode).       Browse and edit Pinnacle Point Spreadsheets.

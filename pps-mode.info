@@ -1,0 +1,300 @@
+Info file: pps-mode.info,    -*-Text-*-
+produced by ‘texinfo-format-buffer’
+from file ‘pps-mode.texi’
+using ‘texinfmt.el’ on Emacs version 31.1.
+
+INFO-DIR-SECTION Emacs misc features
+START-INFO-DIR-ENTRY
+* PPS Mode: (pps-mode).       Browse and edit Pinnacle Point Spreadsheets.
+END-INFO-DIR-ENTRY
+
+
+
+
+
+
+
+File: pps-mode.info, Node: Top
+
+PPS Mode
+********
+
+PPS Mode is a spreadsheet browser and editor for GNU Emacs.  It reads
+and writes the Pinnacle Point Spreadsheet (`.pps') format and presents
+the workbook as a compact keyboard driven grid.
+
+This manual describes PPS Mode version 0.0.1.
+
+* Menu:
+
+* Installation::               Install and open the manual.
+* Quick Start::                Open a workbook and edit cells.
+* Navigation::                 Move through sheets and cells.
+* Editing::                    Change cells, rows, and columns.
+* Formulas::                   Enter safe Lisp shaped formulas.
+* Sheets::                     Manage workbook sheets.
+* Data Tools::                 Search, sort, import, and export.
+* File Format::                The PPS file at a glance.
+* Customization::              Display and capacity settings.
+* Command Reference::          Common commands and keys.
+* Copying::                    License for this manual.
+
+
+
+File: pps-mode.info, Node: Installation
+
+Installation
+************
+
+PPS Mode requires GNU Emacs 29.1 or newer.  Emacs 29 and later can
+install the stable branch directly from GitHub.  Evaluate:
+
+     (package-vc-install
+      '(pps-mode
+        :url "https://github.com/Pinnacle-Point-Development/pps-mode.git"
+        :vc-backend Git
+        :main-file "pps-mode.el"))
+
+For a checkout, add its directory to `load-path' and load the package:
+
+     (add-to-list 'load-path "/path/to/pps-mode")
+     (require 'pps-mode)
+
+Files whose names end in `.pps' then open in PPS Mode automatically.
+Use `M-x pps-info' to open this manual.  It is also available from the
+Info directory with `C-h i m PPS Mode RET'.
+
+
+
+File: pps-mode.info, Node: Quick Start
+
+Quick Start
+***********
+
+Visit an existing `.pps' file with `C-x C-f'.  To make a workbook,
+visit a new filename ending in `.pps'; PPS Mode creates one blank
+sheet.
+
+The current cell has a highlighted border.  Press `RET', `F2', or `e'
+to edit it.  Enter plain text, a number, a boolean, a date, or a
+formula as appropriate for its column type.  Save with the usual `C-x
+C-s'.  Normal Emacs backups, file locking, auto-save, and revert
+apply.
+
+Press `?' for mode help and use the `Spreadsheet' menu to discover all
+commands.
+
+
+
+File: pps-mode.info, Node: Navigation
+
+Navigation
+**********
+
+Arrow keys and `h', `j', `k', and `l' move one cell.  `TAB' and
+`S-TAB' move across columns and wrap between rows.  `M-<' and `M->'
+move to the first and last row.  `Home' and `End' move to the first
+and last column.  Page Up and Page Down move by a rendered page.
+
+Use `g' to enter an A1 address such as `B12', or a sheet-qualified
+address such as `Rates!B2'.  `[' and `]' select the previous and next
+sheet.
+
+
+
+File: pps-mode.info, Node: Editing
+
+Editing
+*******
+
+
+Cells and selections
+====================
+
+Press `SPC' on one corner, move to the opposite corner, and run a
+command to act on the rectangular selection.  Press `SPC' again or
+`C-g' to clear the mark.  `DEL' clears selected cells.  `F' fills
+every selected cell from the top-left cell.
+
+`M-w', `C-w', and `C-y' copy, cut, and paste rectangles.  PPS Mode
+uses tab-separated text on the kill ring, so copied data can move
+between the workbook and other programs.  Formula references adjust
+when formula cells are copied.
+
+
+Rows and columns
+================
+
+`o' inserts a row below the current row and `O' inserts one above.
+`D' deletes selected rows.  `I' inserts a column before the current
+one.  The `Rows and Columns' menu also inserts a column after the
+current one and changes column names, types, and display widths.
+
+Structural changes update formula references.  A reference to a
+deleted cell becomes a `#REF!' error.  Use `u' and `U' for logical
+undo and redo within the workbook.
+
+
+
+File: pps-mode.info, Node: Formulas
+
+Formulas
+********
+
+Press `=' to enter a formula.  Formula syntax resembles Lisp, with
+cell references written as A1 addresses:
+
+     =(+ B1 C1)
+     =(sum (range B1 B20))
+     =(if (> C1 0) "OPEN" "CLOSED")
+     =(+ (cell "Rates" B2) $A$1)
+
+Supported operations include arithmetic, comparison, logic, text
+functions, numeric helpers, aggregates, cell references, and ranges.
+The reader checks every formula against a fixed allowlist.  Formulas
+cannot evaluate arbitrary Lisp or access files, processes, or the
+network.
+
+Dollar signs make row or column components absolute when a formula is copied.
+For example, `$A1' fixes column A and `A$1' fixes row 1.  Use
+`C-c =' to clear the formula cache and recalculate the workbook.
+
+
+
+File: pps-mode.info, Node: Sheets
+
+Sheets
+******
+
+Use `C-c s' to switch by name, `C-c a' to add a sheet, and `C-c n' to
+rename one.  `C-c d' duplicates the active sheet and `C-c x' deletes
+it.  A workbook always contains at least one sheet, and sheet names
+are unique and case-sensitive.
+
+
+
+File: pps-mode.info, Node: Data Tools
+
+Data Tools
+**********
+
+`/' searches for a regular expression.  `f' filters visible rows; `C-c
+C-f' clears the filter.  `s' sorts rows by the active column.  With a
+prefix argument, it sorts in descending order.
+
+`C-c +' reports the count and numeric summary of a selection.  `C-c ?'
+describes the source and calculated value of the current cell.  `C-c
+v' validates column types and reports formula errors.
+
+`pps-import-delimited-file' imports CSV or TSV into a new sheet.
+`pps-export-delimited-file' exports the active sheet.  Prefix
+arguments enable type inference during import and calculated values
+during export.
+
+
+
+File: pps-mode.info, Node: File Format
+
+File Format
+***********
+
+A PPS file is UTF-8 text containing one data-only S-expression.  Its
+root is a `pps' form with format version 1, metadata, an active sheet
+name, and a vector of sheets.  Each sheet contains column descriptions
+and row vectors.  Cells can hold blanks, booleans, strings, numbers,
+dates, date-times, or a validated formula tree.
+
+The reader never passes workbook data to `eval'.  It rejects trailing
+forms, unknown properties, invalid cell forms, excessive dimensions, and
+unrecognized formula operators.  The complete normative contract is in
+`FORMAT.md' in the distribution.
+
+
+
+File: pps-mode.info, Node: Customization
+
+Customization
+*************
+
+Use `M-x customize-group RET pps RET' to change PPS Mode settings.
+
+`pps-retro-display'
+     Use the black and yellow COLORMODECTL inspired display.
+`pps-use-unicode-borders'
+     Draw the grid with Unicode box characters.
+`pps-default-column-width'
+     Set the default width of columns that have no stored width.
+`pps-page-size'
+     Set the number of rows rendered at once.
+`pps-history-limit'
+     Limit the logical workbook undo history.
+`pps-max-file-bytes'
+     Limit accepted input size.
+`pps-max-rows'
+     Limit rows per sheet.
+`pps-max-columns'
+     Limit columns per sheet.
+`pps-max-formula-range-cells'
+     Limit cells expanded by one formula range.
+
+
+
+File: pps-mode.info, Node: Command Reference
+
+Command Reference
+*****************
+
+*Key*             *Command*                *Action*
+`RET', `e'        `pps-edit-cell'          Edit the current cell.
+`='               `pps-enter-formula'      Enter a formula.
+`SPC'             `pps-toggle-mark'        Start or clear a selection.
+`M-w'             `pps-copy'               Copy selected cells.
+`C-w'             `pps-cut'                Cut selected cells.
+`C-y'             `pps-paste'              Paste a rectangle.
+`o', `O'          row insertion            Insert below or above.
+`D'               `pps-delete-rows'        Delete selected rows.
+`I'               `pps-insert-column-before' Insert a column.
+`s'               `pps-sort-column'        Sort by the active column.
+`/'               `pps-find'               Search cell displays.
+`f'               `pps-set-filter'         Filter visible rows.
+`g'               `pps-goto-cell'          Go to an A1 address.
+`[}, `''          sheet navigation         Change active sheet.
+`u', `U'          logical history          Undo or redo a change.
+`C-c v'           `pps-validate'           Validate the workbook.
+`C-c C-i'         `pps-info'               Open this manual.
+`?'               `pps-help'               Describe PPS Mode.
+
+All interactive commands are also available through `M-x' and the
+`Spreadsheet' menu.
+
+
+
+File: pps-mode.info, Node: Copying
+
+Copying
+*******
+
+
+Copyright (C) 2026 Pinnacle Point Development contributors.
+
+Permission is granted to copy, distribute, and/or modify this manual under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.  A copy of the license is included in the PPS Mode distribution as
+`COPYING'.
+
+Tag table:
+Node: Top307
+Node: Installation1273
+Node: Quick Start1980
+Node: Navigation2549
+Node: Editing3025
+Node: Formulas4072
+Node: Sheets4838
+Node: Data Tools5130
+Node: File Format5790
+Node: Customization6434
+Node: Command Reference7173
+Node: Copying8560
+
+End tag table

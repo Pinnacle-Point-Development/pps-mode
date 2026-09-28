@@ -1,0 +1,254 @@
+\input texinfo
+@setfilename pps-mode.info
+@settitle PPS Mode Manual
+@documentencoding UTF-8
+@documentlanguage en
+
+@dircategory Emacs misc features
+@direntry
+* PPS Mode: (pps-mode).       Browse and edit Pinnacle Point Spreadsheets.
+@end direntry
+
+@copying
+Copyright @copyright{} 2026 Pinnacle Point Development contributors.
+
+Permission is granted to copy, distribute, and/or modify this manual under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.  A copy of the license is included in the PPS Mode distribution as
+@file{COPYING}.
+@end copying
+
+@titlepage
+@title PPS Mode Manual
+@subtitle Version 0.0.1
+@author Pinnacle Point Development contributors
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top PPS Mode
+
+PPS Mode is a spreadsheet browser and editor for GNU Emacs.  It reads and
+writes the Pinnacle Point Spreadsheet (@file{.pps}) format and presents the
+workbook as a compact keyboard driven grid.
+
+This manual describes PPS Mode version 0.0.1.
+@end ifnottex
+
+@menu
+* Installation::               Install and open the manual.
+* Quick Start::                Open a workbook and edit cells.
+* Navigation::                 Move through sheets and cells.
+* Editing::                    Change cells, rows, and columns.
+* Formulas::                   Enter safe Lisp shaped formulas.
+* Sheets::                     Manage workbook sheets.
+* Data Tools::                 Search, sort, import, and export.
+* File Format::                The PPS file at a glance.
+* Customization::              Display and capacity settings.
+* Command Reference::          Common commands and keys.
+* Copying::                    License for this manual.
+@end menu
+
+@node Installation
+@chapter Installation
+
+PPS Mode requires GNU Emacs 29.1 or newer.  Emacs 29 and later can install
+the stable branch directly from GitHub.  Evaluate:
+
+@lisp
+(package-vc-install
+ '(pps-mode
+   :url "https://github.com/Pinnacle-Point-Development/pps-mode.git"
+   :vc-backend Git
+   :main-file "pps-mode.el"))
+@end lisp
+
+For a checkout, add its directory to @code{load-path} and load the package:
+
+@lisp
+(add-to-list 'load-path "/path/to/pps-mode")
+(require 'pps-mode)
+@end lisp
+
+Files whose names end in @file{.pps} then open in PPS Mode automatically.
+Use @kbd{M-x pps-info} to open this manual.  It is also available from the
+Info directory with @kbd{C-h i m PPS Mode RET}.
+
+@node Quick Start
+@chapter Quick Start
+
+Visit an existing @file{.pps} file with @kbd{C-x C-f}.  To make a workbook,
+visit a new filename ending in @file{.pps}; PPS Mode creates one blank sheet.
+
+The current cell has a highlighted border.  Press @kbd{RET}, @kbd{F2}, or
+@kbd{e} to edit it.  Enter plain text, a number, a boolean, a date, or a
+formula as appropriate for its column type.  Save with the usual @kbd{C-x
+C-s}.  Normal Emacs backups, file locking, auto-save, and revert apply.
+
+Press @kbd{?} for mode help and use the @samp{Spreadsheet} menu to discover
+all commands.
+
+@node Navigation
+@chapter Navigation
+
+Arrow keys and @kbd{h}, @kbd{j}, @kbd{k}, and @kbd{l} move one cell.
+@kbd{TAB} and @kbd{S-TAB} move across columns and wrap between rows.
+@kbd{M-<} and @kbd{M->} move to the first and last row.  @kbd{Home} and
+@kbd{End} move to the first and last column.  Page Up and Page Down move by a
+rendered page.
+
+Use @kbd{g} to enter an A1 address such as @samp{B12}, or a sheet-qualified
+address such as @samp{Rates!B2}.  @kbd{[} and @kbd{]} select the previous and
+next sheet.
+
+@node Editing
+@chapter Editing
+
+@section Cells and selections
+
+Press @kbd{SPC} on one corner, move to the opposite corner, and run a command
+to act on the rectangular selection.  Press @kbd{SPC} again or @kbd{C-g} to
+clear the mark.  @kbd{DEL} clears selected cells.  @kbd{F} fills every
+selected cell from the top-left cell.
+
+@kbd{M-w}, @kbd{C-w}, and @kbd{C-y} copy, cut, and paste rectangles.  PPS Mode
+uses tab-separated text on the kill ring, so copied data can move between the
+workbook and other programs.  Formula references adjust when formula cells
+are copied.
+
+@section Rows and columns
+
+@kbd{o} inserts a row below the current row and @kbd{O} inserts one above.
+@kbd{D} deletes selected rows.  @kbd{I} inserts a column before the current
+one.  The @samp{Rows and Columns} menu also inserts a column after the current
+one and changes column names, types, and display widths.
+
+Structural changes update formula references.  A reference to a deleted cell
+becomes a @samp{#REF!} error.  Use @kbd{u} and @kbd{U} for logical undo and
+redo within the workbook.
+
+@node Formulas
+@chapter Formulas
+
+Press @kbd{=} to enter a formula.  Formula syntax resembles Lisp, with cell
+references written as A1 addresses:
+
+@example
+=(+ B1 C1)
+=(sum (range B1 B20))
+=(if (> C1 0) "OPEN" "CLOSED")
+=(+ (cell "Rates" B2) $A$1)
+@end example
+
+Supported operations include arithmetic, comparison, logic, text functions,
+numeric helpers, aggregates, cell references, and ranges.  The reader checks
+every formula against a fixed allowlist.  Formulas cannot evaluate arbitrary
+Lisp or access files, processes, or the network.
+
+Dollar signs make row or column components absolute when a formula is copied.
+For example, @samp{$A1} fixes column A and @samp{A$1} fixes row 1.  Use
+@kbd{C-c =} to clear the formula cache and recalculate the workbook.
+
+@node Sheets
+@chapter Sheets
+
+Use @kbd{C-c s} to switch by name, @kbd{C-c a} to add a sheet, and @kbd{C-c
+n} to rename one.  @kbd{C-c d} duplicates the active sheet and @kbd{C-c x}
+deletes it.  A workbook always contains at least one sheet, and sheet names
+are unique and case-sensitive.
+
+@node Data Tools
+@chapter Data Tools
+
+@kbd{/} searches for a regular expression.  @kbd{f} filters visible rows;
+@kbd{C-c C-f} clears the filter.  @kbd{s} sorts rows by the active column.
+With a prefix argument, it sorts in descending order.
+
+@kbd{C-c +} reports the count and numeric summary of a selection.  @kbd{C-c
+?} describes the source and calculated value of the current cell.  @kbd{C-c
+v} validates column types and reports formula errors.
+
+@code{pps-import-delimited-file} imports CSV or TSV into a new sheet.
+@code{pps-export-delimited-file} exports the active sheet.  Prefix arguments
+enable type inference during import and calculated values during export.
+
+@node File Format
+@chapter File Format
+
+A PPS file is UTF-8 text containing one data-only S-expression.  Its root is
+a @code{pps} form with format version 1, metadata, an active sheet name, and a
+vector of sheets.  Each sheet contains column descriptions and row vectors.
+Cells can hold blanks, booleans, strings, numbers, dates, date-times, or a
+validated formula tree.
+
+The reader never passes workbook data to @code{eval}.  It rejects trailing
+forms, unknown properties, invalid cell forms, excessive dimensions, and
+unrecognized formula operators.  The complete normative contract is in
+@file{FORMAT.md} in the distribution.
+
+@node Customization
+@chapter Customization
+
+Use @kbd{M-x customize-group RET pps RET} to change PPS Mode settings.
+
+@table @code
+@item pps-retro-display
+Use the black and yellow COLORMODECTL inspired display.
+@item pps-use-unicode-borders
+Draw the grid with Unicode box characters.
+@item pps-default-column-width
+Set the default width of columns that have no stored width.
+@item pps-page-size
+Set the number of rows rendered at once.
+@item pps-history-limit
+Limit the logical workbook undo history.
+@item pps-max-file-bytes
+Limit accepted input size.
+@item pps-max-rows
+Limit rows per sheet.
+@item pps-max-columns
+Limit columns per sheet.
+@item pps-max-formula-range-cells
+Limit cells expanded by one formula range.
+@end table
+
+@node Command Reference
+@chapter Command Reference
+
+@multitable @columnfractions .25 .35 .40
+@item @strong{Key} @tab @strong{Command} @tab @strong{Action}
+@item @kbd{RET}, @kbd{e} @tab @code{pps-edit-cell} @tab Edit the current cell.
+@item @kbd{=} @tab @code{pps-enter-formula} @tab Enter a formula.
+@item @kbd{SPC} @tab @code{pps-toggle-mark} @tab Start or clear a selection.
+@item @kbd{M-w} @tab @code{pps-copy} @tab Copy selected cells.
+@item @kbd{C-w} @tab @code{pps-cut} @tab Cut selected cells.
+@item @kbd{C-y} @tab @code{pps-paste} @tab Paste a rectangle.
+@item @kbd{o}, @kbd{O} @tab row insertion @tab Insert below or above.
+@item @kbd{D} @tab @code{pps-delete-rows} @tab Delete selected rows.
+@item @kbd{I} @tab @code{pps-insert-column-before} @tab Insert a column.
+@item @kbd{s} @tab @code{pps-sort-column} @tab Sort by the active column.
+@item @kbd{/} @tab @code{pps-find} @tab Search cell displays.
+@item @kbd{f} @tab @code{pps-set-filter} @tab Filter visible rows.
+@item @kbd{g} @tab @code{pps-goto-cell} @tab Go to an A1 address.
+@item @kbd{[}, @kbd{]} @tab sheet navigation @tab Change active sheet.
+@item @kbd{u}, @kbd{U} @tab logical history @tab Undo or redo a change.
+@item @kbd{C-c v} @tab @code{pps-validate} @tab Validate the workbook.
+@item @kbd{C-c C-i} @tab @code{pps-info} @tab Open this manual.
+@item @kbd{?} @tab @code{pps-help} @tab Describe PPS Mode.
+@end multitable
+
+All interactive commands are also available through @kbd{M-x} and the
+@samp{Spreadsheet} menu.
+
+@node Copying
+@appendix Copying
+
+@insertcopying
+
+@bye

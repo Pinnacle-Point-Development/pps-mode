@@ -53,6 +53,18 @@ and add it to `load-path`:
 
 Files ending in `.pps` then open in PPS Mode automatically.
 
+## Manual
+
+The distribution includes a GNU Info manual.  Run `M-x pps-info`, press
+`C-c C-i` in a PPS buffer, or open the Info directory with `C-h i` and select
+**PPS Mode**.  The Texinfo source is [pps-mode.texi](pps-mode.texi).
+
+Repository channels are:
+
+- `public` — stable, released code and the default install branch;
+- `nightly` — the next tested integration state; and
+- `experimental` — early work that may change or be discarded.
+
 ## Start
 
 Open [examples/colormodectl.pps](examples/colormodectl.pps), or create a new
@@ -76,6 +88,7 @@ Common keys:
 | `g` | Go to an address such as `B12` or `Rates!B2` |
 | `[` / `]` | Previous / next sheet |
 | `u` / `U` | Undo / redo |
+| `C-c C-i` | Open the Info manual |
 | `?` | Full mode help |
 
 The **Spreadsheet** menu exposes every command, including sheet management,
@@ -118,4 +131,3 @@ the ERT suite.  See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules.
 
 PPS Mode is free software licensed under GNU GPL version 3 or, at your option,
 any later version.  See [COPYING](COPYING).
-

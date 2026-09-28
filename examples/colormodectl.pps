@@ -1,0 +1,23 @@
+;; Pinnacle Point Spreadsheet — PPS 1
+(pps
+ :version 1
+ :meta (:title "COLORMODECTL"
+        :description "Studio state controls adapted from colormodectl.txt")
+ :active-sheet "Control"
+ :sheets
+ [(:sheet
+   :name "Control"
+   :columns
+   [(:column :name "KEY" :type :text :width 14)
+    (:column :name "HOURS" :type :boolean :width 8 :format "ON|OFF")
+    (:column :name "MIC" :type :boolean :width 8 :format "ON|OFF")
+    (:column :name "TAPE" :type :boolean :width 8 :format "ON|OFF")
+    (:column :name "STREAM" :type :boolean :width 8 :format "ON|OFF")
+    (:column :name "COLOR" :type :text :width 10)]
+   :rows
+   [["OPEN" :true :false :false :true "GREEN"]
+    ["REHEARSAL" :true :true :true :true "YELLOW"]
+    ["RECORDING" :true :true :true :true "RED"]
+    ["STANDBY" :false :false :true :false "BLUE"]
+    ["ALL-CLEAR" :false :true :true :true "PURPLE"]
+    ["CLOSED" :false :false :false :false "OFF"]])])
